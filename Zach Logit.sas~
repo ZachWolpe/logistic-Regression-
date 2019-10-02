@@ -38,6 +38,13 @@ proc logistic data=a;
 	model chd = age / lackfit;
 run;
  
+ 
+proc logistic data=a;
+	model chd(event='1') = age / outroc=rocl lackfit;
+	output out=n p=pred;
+run;
+
+
 
 *** ---------------------  Logistic Regression --------------------- ***;
 
