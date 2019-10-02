@@ -100,21 +100,21 @@ start Hosmer_Lemeshow;
 	* expected vs actual Y=0;
 	zeros_ea = (nrow(slice)-ea[,1]) || (nrow(slice)-ea[,2]);
 	
+	eaa = ea // zeros_ea;
+	chisq_stat = 0;
 	
-	chai_statistics = 0;
-	do i=1 to 2;
-		* for each Y e [0,1];
-		do j=1 to nrow(ea);
-			* for each group;
-			chai_statistics = 
-				chai_statistics + 
-		end;
+	do i=1 to nrow(eaa);
+		chisq_stat = 
+			chisq_stat + (eaa[i,2]-eaa[i,1])**2 / eaa[i,1];
 	end;
+	critical_value = quantile('chisq', 0.95, g-2);
+	p_value = 1 - cdf('chisq', g-2, chisq_stat);
 	
+	print chisq_stat critical_value p_value;
 finish Hosmer_Lemeshow;
 
 call hosmer_lemeshow;
-print ea zeros_ea;
+print ea zeros_ea chisq_stat;
 
 
 
