@@ -193,7 +193,6 @@ ALGORITHM:
 	determine which line segment the point corresponds to
 	use Monte Carlo Integration: declare above or below line 
 /;
-
 proc print data=roc_data;
 
 proc iml;
@@ -204,11 +203,11 @@ x = yx[,2];
 n = nrow(yx);
 iters = 500;
 
+
 start find_equation;
 	m = (y2-y1)/(x2-x1);
 	c = y2 - m*x2;
 finish find_equation;
-
 
 
 * determine line equations;
@@ -220,6 +219,7 @@ do i=1 to n-1;
 	equations  = equations // (m || c);
 end;
 
+print equations;
 
 * MC integration;
 do i=1 to iters;
