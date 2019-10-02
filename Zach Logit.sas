@@ -33,10 +33,6 @@ cards ;
 ;
 run ;
 
-
-proc logistic data=a;
-	model chd = age / lackfit;
-run;
  
  
 proc logistic data=a;
@@ -194,7 +190,6 @@ ALGORITHM:
 	use Monte Carlo Integration: declare above or below line 
 /;
 
-proc print data=roc_data;
 
 proc iml;
 use roc_data;
@@ -202,7 +197,8 @@ read all into yx;
 y = yx[,1];
 x = yx[,2];
 n = nrow(yx);
-iters = 100;
+iters = 10000;
+
 
 start find_equation;
 	m = (y2-y1)/(x2-x1);
@@ -210,15 +206,20 @@ start find_equation;
 finish find_equation;
 
 
-
 * determine line equations;
 do i=1 to n-1;
+
 	y2 = y[i+1]; y1 = y[i];
 	x2 = x[i+1]; x1 = x[i];
 	
-	call find_equation;
-	equations  = equations // (m || c);
+	* if Y and X differ from Y-1 & X-1;
+	if (y2^=y1) & (x2^=x1) then do;
+		call find_equation;
+		equations  = equations // (x1 || x2 || y1 || y2 || m || c);
+	end;
 end;
+
+
 
 
 * MC integration;
@@ -226,24 +227,30 @@ do i=1 to iters;
 	sample_y = rand('uniform');
 	sample_x = rand('uniform');
 	
-	samples = samples // (sample_x || sample_y);
 	
 	* find location w.r.t X;
-	loc = nrow(x);
-	do i=1 to nrow(x);
-		if sample_x < x[i] then; loc = loc - 1;
+	loc = 0;
+	do i=1 to nrow(equations);
+		if sample_x > equations[i,1] then; loc = loc + 1;
 	end;
 	
-	* use appropriate equation to evaluate sample;
-	fx = equations[loc,1]*sample_x;
-	if sample_y < fx then; results = results // 1;
-	if sample_y > fx then; results = results // 0;
+	if loc ^= 0 then do;
+		* use appropriate equation to evaluate sample;
+		fx = equations[loc,5]*sample_x + equations[loc,6];
+		if sample_y < fx then; 
+			samples = samples // (sample_x || sample_y || 1);
+		if sample_y > fx then; 
+			samples = samples // (sample_x || sample_y || 0);
+	end;
 end;
 
+print 'Gini coefficient:' (mean(samples[,3]));
 
-print 'Gini coefficient:' (mean(results));
 
 
+create samples from samples[colname={'x' 'y' 'result'}];
+append from samples;
+quit;
 
 
 
