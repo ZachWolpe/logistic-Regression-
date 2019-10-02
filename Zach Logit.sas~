@@ -202,7 +202,7 @@ read all into yx;
 y = yx[,1];
 x = yx[,2];
 n = nrow(yx);
-iters = 1000;
+iters = 500;
 
 start find_equation;
 	m = (y2-y1)/(x2-x1);
@@ -226,6 +226,8 @@ do i=1 to iters;
 	sample_y = rand('uniform');
 	sample_x = rand('uniform');
 	
+	samples = samples // (sample_x || sample_y);
+	
 	* find location w.r.t X;
 	loc = nrow(x);
 	do i=1 to nrow(x);
@@ -238,9 +240,13 @@ do i=1 to iters;
 	if sample_y > fx then; results = results // 0;
 end;
 
+tt = samples || yx;
+
 
 print 'Gini coefficient:' (mean(results));
 
+create tt from tt[colname={'x' 'y' 'sensitivity' '_1_specificity'}];
+append from tt;
 
 
 
