@@ -38,8 +38,16 @@ proc logistic data=a;
 	model chd = age / lackfit;
 run;
  
+ 
+proc logistic data=a;
+	model chd(event='1') = age / outroc=rocl lackfit;
+	output out=n p=pred;
+run;
+
+
 
 *** ---------------------  Logistic Regression --------------------- ***;
+title "Logistic Regression";
 
 proc iml;
 use a;
@@ -74,6 +82,7 @@ call logistic_regression;
 
 
 *** ---------------------  Hosmer-Lemeshow Test --------------------- ***;
+title 'Hosmer-Lemeshow Test';
 
 * number of groups;
 g=10;
@@ -117,13 +126,59 @@ call hosmer_lemeshow;
 print ea zeros_ea chisq_stat;
 
 
+
+*** ---------------------  ROC Curve --------------------- ***;
+title 'ROC Curve';
+
+
+start confusion_matrix;
+	cm = y || classification;
+	
+	TP=0; TN=0; FP=0; FN=0;
+	do c=1 to nrow(cm);
+		if cm[c,1] = cm[c,2] then do;
+			* TRUE;
+			if cm[c,1]=1 then; TP = TP + 1;
+			if cm[c,1]=0 then; TN = TN + 1;
+		end;
+		if cm[c,1] ^= cm[c,2] then do;
+			* FALSE;
+			if cm[c,2]=1 then; FP = FP + 1;
+			if cm[c,2]=0 then; FN = FN + 1;
+		end;
+	end;
+	
+	sensitivity = TP/(TP+FN);
+	specificity = TN/(TN+FP);
+finish confusion_matrix;
+
+
+start roc;
+	pred = exp(x*bn) / (1 + exp(x*bn));
+	d = x || y || pred;
+	call sort(d, {4});
+
+	do i=1 to 100;
+		* for each classification threshold;
+		threshold = i/100;
+		classification = d[,4] > threshold;
+		call confusion_matrix;
+		
+		roc_data = roc_data // (sensitivity || (1-specificity));
+	end;
+finish roc;
+
+call roc;
+
+create roc_data from roc_data[colname={'sensitivity' '1_specificity'}];
+append from roc_data;
+
+
+
+
+
 *** ---------------------  Gini Coefficient --------------------- ***;
-
-
-
-
-
-
+title "Gini Coefficient";
 
 
 
